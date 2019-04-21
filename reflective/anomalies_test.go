@@ -7,11 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test(t *testing.T) {
-	assert.Nil(t, nil)
+func resetLogic() {
+	keyReadRecords = map[string]readRecord{}
+	keyAnomalies = map[string]int{}
 }
 
 func TestNoAnomaly(t *testing.T) {
+	resetLogic()
+
 	now := time.Now().UnixNano()
 
 	RecordRead("key", "value", now)
@@ -32,9 +35,16 @@ func TestNoAnomaly(t *testing.T) {
 	assert.False(t, CheckWriteForAnomaly("key2", "value", now-1))
 	assert.False(t, CheckWriteForAnomaly("key2", "value", now+1))
 	assert.False(t, CheckWriteForAnomaly("key2", "value2", now-1))
+
+	anoms, _ := keyAnomalies["key"]
+	assert.Equal(t, 0, anoms)
+	anoms, _ = keyAnomalies["key2"]
+	assert.Equal(t, 0, anoms)
 }
 
 func TestAnomaly(t *testing.T) {
+	resetLogic()
+
 	now := time.Now().UnixNano()
 
 	RecordRead("key", "value", now)
@@ -42,4 +52,7 @@ func TestAnomaly(t *testing.T) {
 	// If the write is before and a different value, it's an anomaly
 	assert.True(t, CheckWriteForAnomaly("key", "value2", now-1))
 	assert.True(t, CheckWriteForAnomaly("key", "value3", now-2))
+
+	anoms, _ := keyAnomalies["key"]
+	assert.Equal(t, 2, anoms)
 }
