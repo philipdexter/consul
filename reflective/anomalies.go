@@ -9,9 +9,14 @@ import (
 type readRecord struct {
 	whenReadNano int64 // use time.Now().UnixNano()
 	valueRead    []byte
+	// TODO maybe keep how many times read?
+	// and latest value read before seeing a write?
+	// if so don't need an array as mentioned
+	// in the TODO below
 }
 
 // read stores a read record for each key
+// TODO need array?
 var keyReadRecords map[string]readRecord = map[string]readRecord{}
 
 // keyAnomalies stores a number of anomalies
@@ -43,6 +48,8 @@ func CheckWriteForAnomaly(key string, value []byte, when int64) bool {
 			return true
 		}
 	}
+
+	// TODO if not an anomaly, do we remove the read record?
 
 	return false
 }
