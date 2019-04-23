@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/consul/agent/consul/state"
 	"github.com/hashicorp/consul/agent/structs"
 	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/reflective"
 	"github.com/hashicorp/consul/sentinel"
 	"github.com/hashicorp/go-memdb"
 )
@@ -97,6 +98,9 @@ func (k *KVS) Apply(args *structs.KVSRequest, reply *bool) error {
 		return nil
 	}
 
+	// Set the timestamp to now
+	args.Timestamp = time.Now().UnixNano()
+
 	// Apply the update.
 	resp, err := k.srv.raftApply(structs.KVSRequestType, args)
 	if err != nil {
@@ -116,6 +120,11 @@ func (k *KVS) Apply(args *structs.KVSRequest, reply *bool) error {
 
 // Get is used to lookup a single key.
 func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) error {
+	// TODO check for anomalies here
+	// if over X% then change the 'strength' of this read and maybe force it to
+	// forward to the leader
+	// if it already is the leader then maybe force it into a 'consistent' read
+
 	if done, err := k.srv.forward("KVS.Get", args, args, reply); done {
 		return err
 	}
@@ -135,6 +144,11 @@ func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) er
 			if aclRule != nil && !aclRule.KeyRead(args.Key) {
 				return acl.ErrPermissionDenied
 			}
+
+			// TODO think, do we care which reason done is false?
+			// we can still have anomalies if we're the leader
+			// due to reads not going through raft
+			reflective.RecordRead(ent.Key, ent.Value, time.Now().UnixNano())
 
 			if ent == nil {
 				// Must provide non-zero index to prevent blocking

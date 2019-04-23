@@ -193,7 +193,8 @@ func (q QueryOptions) TokenSecret() string {
 type WriteRequest struct {
 	// Token is the ACL token ID. If not provided, the 'anonymous'
 	// token is assumed for backwards compatibility.
-	Token string
+	Token     string
+	Timestamp int64
 }
 
 // WriteRequest only applies to writes, always false

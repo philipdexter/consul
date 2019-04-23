@@ -7,6 +7,7 @@ import (
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/consul/agent/structs"
 	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/reflective"
 )
 
 func init() {
@@ -81,10 +82,12 @@ func (c *FSM) applyKVSOperation(buf []byte, index uint64) interface{} {
 	if err := structs.Decode(buf, &req); err != nil {
 		panic(fmt.Errorf("failed to decode request: %v", err))
 	}
+
 	defer metrics.MeasureSinceWithLabels([]string{"fsm", "kvs"}, time.Now(),
 		[]metrics.Label{{Name: "op", Value: string(req.Op)}})
 	switch req.Op {
 	case api.KVSet:
+		reflective.CheckWriteForAnomaly(req.DirEnt.Key, req.DirEnt.Value, req.Timestamp)
 		return c.state.KVSSet(index, &req.DirEnt)
 	case api.KVDelete:
 		return c.state.KVSDelete(index, req.DirEnt.Key)
