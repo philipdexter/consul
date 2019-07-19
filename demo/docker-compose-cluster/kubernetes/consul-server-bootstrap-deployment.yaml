@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.18.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: consul-server-bootstrap
+  name: consul-server-bootstrap
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: consul-server-bootstrap
+    spec:
+      containers:
+      - args:
+        - agent
+        - -server
+        - -bootstrap-expect
+        - "3"
+        - -ui
+        - -client
+        - 0.0.0.0
+        image: philipdexter/consul-dev:latest
+        name: consul-server-bootstrap
+        ports:
+        - containerPort: 8400
+        - containerPort: 8500
+        - containerPort: 8600
+        - containerPort: 8600
+          protocol: UDP
+        resources: {}
+      restartPolicy: Always
+status: {}

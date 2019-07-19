@@ -1,0 +1,31 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.18.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: consul-agent-3
+  name: consul-agent-3
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: consul-agent-3
+    spec:
+      containers:
+      - args:
+        - agent
+        - -retry-join
+        - consul-server-bootstrap
+        - -client
+        - 0.0.0.0
+        image: philipdexter/consul-dev:latest
+        name: consul-agent-3
+        resources: {}
+      restartPolicy: Always
+status: {}
