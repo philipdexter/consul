@@ -53,7 +53,9 @@ func TestAnomaly(t *testing.T) {
 	RecordRead("key", []byte("value"), now)
 
 	// If the write is before and a different value, it's an anomaly
+	RecordReadRequest("key")
 	assert.True(t, CheckWriteForAnomaly("key", []byte("value2"), now-1))
+	RecordReadRequest("key")
 	assert.True(t, CheckWriteForAnomaly("key", []byte("value3"), now-2))
 
 	assert.Equal(t, 2, AnomalyCountForKey("key"))
