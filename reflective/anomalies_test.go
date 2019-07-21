@@ -36,10 +36,13 @@ func TestNoAnomaly(t *testing.T) {
 	assert.False(t, CheckWriteForAnomaly("key2", []byte("value"), now+1))
 	assert.False(t, CheckWriteForAnomaly("key2", []byte("value2"), now-1))
 
-	anoms, _ := keyAnomalies["key"]
-	assert.Equal(t, 0, anoms)
-	anoms, _ = keyAnomalies["key2"]
-	assert.Equal(t, 0, anoms)
+	assert.Equal(t, 0, AnomalyCountForKey("key"))
+	assert.Equal(t, 0, AnomalyCountForKey("key2"))
+	assert.Equal(t, 0, AnomalyCountForKey("key3"))
+
+	assert.Equal(t, 0, AnomalyRateForKey("key"))
+	assert.Equal(t, 0, AnomalyRateForKey("key2"))
+	assert.Equal(t, 0, AnomalyRateForKey("key3"))
 }
 
 func TestAnomaly(t *testing.T) {
@@ -53,6 +56,6 @@ func TestAnomaly(t *testing.T) {
 	assert.True(t, CheckWriteForAnomaly("key", []byte("value2"), now-1))
 	assert.True(t, CheckWriteForAnomaly("key", []byte("value3"), now-2))
 
-	anoms, _ := keyAnomalies["key"]
-	assert.Equal(t, 2, anoms)
+	assert.Equal(t, 2, AnomalyCountForKey("key"))
+	assert.Equal(t, 100, AnomalyRateForKey("key"))
 }

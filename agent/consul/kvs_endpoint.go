@@ -125,6 +125,14 @@ func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) er
 	// forward to the leader
 	// if it already is the leader then maybe force it into a 'consistent' read
 
+	reflective.RecordReadRequest(args.Key)
+
+	anomalyRate := reflective.AnomalyRateForKey(args.Key)
+
+	if anomalyRate > 5 {
+		args.AllowStale = false
+	}
+
 	if done, err := k.srv.forward("KVS.Get", args, args, reply); done {
 		return err
 	}
