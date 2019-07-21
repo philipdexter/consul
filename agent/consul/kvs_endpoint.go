@@ -156,7 +156,7 @@ func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) er
 			// TODO think, do we care which reason done is false?
 			// we can still have anomalies if we're the leader
 			// due to reads not going through raft
-			reflective.RecordRead(ent.Key, ent.Value, time.Now().UnixNano())
+			reflective.RecordRead(args.Key, ent.Value, time.Now().UnixNano())
 
 			if ent == nil {
 				// Must provide non-zero index to prevent blocking
