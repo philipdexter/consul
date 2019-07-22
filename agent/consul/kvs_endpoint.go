@@ -99,6 +99,7 @@ func (k *KVS) Apply(args *structs.KVSRequest, reply *bool) error {
 	}
 
 	// Set the timestamp to now
+	// TODO is this called for... just writes, right?
 	args.Timestamp = time.Now().UnixNano()
 
 	// Apply the update.
@@ -125,11 +126,19 @@ func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) er
 	// forward to the leader
 	// if it already is the leader then maybe force it into a 'consistent' read
 
+	fmt.Println("DOING A GET")
+
 	reflective.RecordReadRequest(args.Key)
 
+	anomalyCount := reflective.AnomalyCountForKey(args.Key)
 	anomalyRate := reflective.AnomalyRateForKey(args.Key)
+	readCount := reflective.ReadCountForKey(args.Key)
+	fmt.Println("anomaly count for key", args.Key, "=", anomalyCount)
+	fmt.Println("anomaly rate for key", args.Key, "=", anomalyRate)
+	fmt.Println("read count for key", args.Key, "=", readCount)
 
 	if anomalyRate > 5 {
+		fmt.Println("CHANGING TO NOT STALE")
 		args.AllowStale = false
 	}
 

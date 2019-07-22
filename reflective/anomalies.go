@@ -56,6 +56,7 @@ func RecordReadNow(key string, value []byte) {
 }
 
 // CheckWriteForAnomaly checks a write of value to key at a time when
+// TODO when we find an anomaly do we remove from read requests? don't want to count anomalies twice
 func CheckWriteForAnomaly(key string, value []byte, when int64) bool {
 	keyReadRecordsLock.Lock()
 	readRecord, found := keyReadRecords[key]
