@@ -66,7 +66,11 @@ func CheckWriteForAnomaly(key string, value []byte, when int64) bool {
 
 	// If the write is in the past and it's different than
 	// what was returned on the read then it's an anomaly
-	if readRecord.whenReadNano > when {
+	// TODO currently using a 'grace period' of 35 ms
+	// as in the existential consistency paper
+	// think if we should use something else
+	// (like measure clock skew ourselves?
+	if readRecord.whenReadNano-35000000 > when {
 		if !bytes.Equal(readRecord.valueRead, value) {
 			registerAnomaly(key)
 			return true
