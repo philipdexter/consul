@@ -126,6 +126,10 @@ func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) er
 	// forward to the leader
 	// if it already is the leader then maybe force it into a 'consistent' read
 
+	// TODO are we ever getting anomalies under default? consistent? if so
+	// check if write can ever be applied after read under default or even
+	// consistent consistency
+
 	fmt.Println("DOING A GET")
 
 	reflective.RecordReadRequest(args.Key)
