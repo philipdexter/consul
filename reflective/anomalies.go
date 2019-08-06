@@ -11,13 +11,9 @@ type readRecord struct {
 	whenReadNano int64 // use time.Now().UnixNano()
 	valueRead    []byte
 	// TODO maybe keep how many times read?
-	// and latest value read before seeing a write?
-	// if so don't need an array as mentioned
-	// in the TODO below
 }
 
 // read stores a read record for each key
-// TODO need array?
 var keyReadRecords map[string]readRecord = map[string]readRecord{}
 var keyReadRecordsLock = sync.Mutex{}
 
@@ -56,10 +52,11 @@ func RecordReadNow(key string, value []byte) {
 }
 
 // CheckWriteForAnomaly checks a write of value to key at a time when
-// TODO when we find an anomaly do we remove from read requests? don't want to count anomalies twice
 func CheckWriteForAnomaly(key string, value []byte, when int64) bool {
 	keyReadRecordsLock.Lock()
 	readRecord, found := keyReadRecords[key]
+	// Whether or not it's an anomaly, we don't want to check again (no double counting)
+	delete(keyReadRecords, key)
 	keyReadRecordsLock.Unlock()
 	if !found {
 		return false
@@ -67,7 +64,8 @@ func CheckWriteForAnomaly(key string, value []byte, when int64) bool {
 
 	// If the write is in the past and it's different than
 	// what was returned on the read then it's an anomaly
-	// TODO currently using a 'grace period' of 35 ms
+	//
+	// currently using a 'grace period' of 35 ms
 	// as in the existential consistency paper
 	// think if we should use something else
 	// (like measure clock skew ourselves?
@@ -77,8 +75,6 @@ func CheckWriteForAnomaly(key string, value []byte, when int64) bool {
 			return true
 		}
 	}
-
-	// TODO if not an anomaly, do we remove the read record?
 
 	return false
 }
@@ -100,7 +96,7 @@ func registerAnomaly(key string) {
 	keyAnomaliesLock.Unlock()
 }
 
-// AnomalyCountForKey returns the anomaly count for a specific key
+// AnomalyCountForKey returns the anomaly count for key
 func AnomalyCountForKey(key string) int {
 	keyAnomaliesLock.Lock()
 	count, ok := keyAnomalies[key]
@@ -111,6 +107,7 @@ func AnomalyCountForKey(key string) int {
 	return count
 }
 
+// ReadCountForKey returns the total number of reads performed for key
 func ReadCountForKey(key string) int {
 	keyReadsLock.Lock()
 	count, ok := keyReads[key]

@@ -79,6 +79,9 @@ func kvsPreApply(srv *Server, rule acl.Authorizer, op api.KVOp, dirEnt *structs.
 
 // Apply is used to apply a KVS update request to the data store.
 func (k *KVS) Apply(args *structs.KVSRequest, reply *bool) error {
+
+	fmt.Println("PUT", args.DirEnt.Key)
+
 	if done, err := k.srv.forward("KVS.Apply", args, args, reply); done {
 		return err
 	}
@@ -99,7 +102,6 @@ func (k *KVS) Apply(args *structs.KVSRequest, reply *bool) error {
 	}
 
 	// Set the timestamp to now
-	// TODO is this called for... just writes, right?
 	args.Timestamp = time.Now().UnixNano()
 
 	// Apply the update.
@@ -121,29 +123,29 @@ func (k *KVS) Apply(args *structs.KVSRequest, reply *bool) error {
 
 // Get is used to lookup a single key.
 func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) error {
-	// TODO check for anomalies here
-	// if over X% then change the 'strength' of this read and maybe force it to
-	// forward to the leader
-	// if it already is the leader then maybe force it into a 'consistent' read
 
-	// TODO are we ever getting anomalies under default? consistent? if so
-	// check if write can ever be applied after read under default or even
-	// consistent consistency
+	fmt.Println("GET", args.Key)
 
-	fmt.Println("DOING A GET")
+	isLeader := k.srv.IsLeader()
+	isStale := args.AllowStale
 
-	reflective.RecordReadRequest(args.Key)
+	// only record a read if we're tracking anomalies for this server
+	if !isLeader {
+		reflective.RecordReadRequest(args.Key)
+	}
 
-	anomalyCount := reflective.AnomalyCountForKey(args.Key)
-	anomalyRate := reflective.AnomalyRateForKey(args.Key)
-	readCount := reflective.ReadCountForKey(args.Key)
-	fmt.Println("anomaly count for key", args.Key, "=", anomalyCount)
-	fmt.Println("anomaly rate for key", args.Key, "=", anomalyRate)
-	fmt.Println("read count for key", args.Key, "=", readCount)
+	// only try to change consistency when we think anomalies are possible
+	if !isLeader && isStale {
 
-	if anomalyRate > 5 {
-		fmt.Println("CHANGING TO NOT STALE")
-		args.AllowStale = false
+		anomalyCount := reflective.AnomalyCountForKey(args.Key)
+		anomalyRate := reflective.AnomalyRateForKey(args.Key)
+		readCount := reflective.ReadCountForKey(args.Key)
+		fmt.Println("read count =", readCount, "anomaly count =", anomalyCount, "anomaly rate =", anomalyRate)
+
+		if anomalyRate > 5 {
+			fmt.Println("disabling stale")
+			args.AllowStale = false
+		}
 	}
 
 	if done, err := k.srv.forward("KVS.Get", args, args, reply); done {
@@ -166,10 +168,11 @@ func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) er
 				return acl.ErrPermissionDenied
 			}
 
-			// TODO think, do we care which reason done is false?
-			// we can still have anomalies if we're the leader
-			// due to reads not going through raft
-			reflective.RecordRead(args.Key, ent.Value, time.Now().UnixNano())
+			// only record a completed read if we're tracking anomalies
+			// for this server
+			if !isLeader {
+				reflective.RecordRead(args.Key, ent.Value, time.Now().UnixNano())
+			}
 
 			if ent == nil {
 				// Must provide non-zero index to prevent blocking
