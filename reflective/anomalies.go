@@ -19,12 +19,12 @@ var keyReadRecordsLock = sync.Mutex{}
 
 // keyAnomalies stores a number of anomalies
 // for each key
-var keyAnomalies map[string]int = map[string]int{}
+var keyAnomalies map[string]*movingAverage = map[string]*movingAverage{}
 var keyAnomaliesLock = sync.Mutex{}
 
 // keyReads stores the total number of reads
 // performed for each key
-var keyReads map[string]int = map[string]int{}
+var keyReads map[string]*movingAverage = map[string]*movingAverage{}
 var keyReadsLock = sync.Mutex{}
 
 // RecordRead records a read for key which returned value at time when
@@ -38,11 +38,12 @@ func RecordRead(key string, value []byte, when int64) {
 // no read record is created.
 func RecordReadRequest(key string) {
 	keyReadsLock.Lock()
-	reads, ok := keyReads[key]
+	ma, ok := keyReads[key]
 	if !ok {
-		reads = 0
+		ma = newMovingAverage()
+		keyReads[key] = ma
 	}
-	keyReads[key] = reads + 1
+	ma.increment()
 	keyReadsLock.Unlock()
 }
 
@@ -87,35 +88,35 @@ func CheckWriteForAnomalyNow(key string, value []byte) bool {
 // registerAnomaly registers an anomaly for key
 func registerAnomaly(key string) {
 	keyAnomaliesLock.Lock()
-	val, found := keyAnomalies[key]
+	ma, found := keyAnomalies[key]
 	if !found {
-		val = 0
+		ma = newMovingAverage()
+		keyAnomalies[key] = ma
 	}
-	val++
-	keyAnomalies[key] = val
+	ma.increment()
 	keyAnomaliesLock.Unlock()
 }
 
 // AnomalyCountForKey returns the anomaly count for key
 func AnomalyCountForKey(key string) int {
 	keyAnomaliesLock.Lock()
-	count, ok := keyAnomalies[key]
-	keyAnomaliesLock.Unlock()
+	defer keyAnomaliesLock.Unlock()
+	ma, ok := keyAnomalies[key]
 	if !ok {
 		return 0
 	}
-	return count
+	return ma.total()
 }
 
 // ReadCountForKey returns the total number of reads performed for key
 func ReadCountForKey(key string) int {
 	keyReadsLock.Lock()
-	count, ok := keyReads[key]
+	defer keyReadsLock.Unlock()
+	ma, ok := keyReads[key]
 	if !ok {
 		return 0
 	}
-	keyReadsLock.Unlock()
-	return count
+	return ma.total()
 }
 
 // AnomalyRateForKey returns the anomaly percentage, as an integer >= 0 and <= 100,
@@ -123,17 +124,70 @@ func ReadCountForKey(key string) int {
 //
 // The rate is calculated over the total number of reads.
 func AnomalyRateForKey(key string) int {
+	totalReads := 0
 	keyReadsLock.Lock()
-	totalReads, ok := keyReads[key]
+	ma, ok := keyReads[key]
+	if ok {
+		totalReads = ma.total()
+	}
 	keyReadsLock.Unlock()
-	if !ok || totalReads == 0 {
+	if totalReads == 0 {
 		return 0
 	}
+
+	anomalyCount := 0
 	keyAnomaliesLock.Lock()
-	anomalyCount, ok := keyAnomalies[key]
+	ma, ok = keyAnomalies[key]
+	if ok {
+		anomalyCount = ma.total()
+	}
 	keyAnomaliesLock.Unlock()
-	if !ok {
+	if anomalyCount == 0 {
 		return 0
 	}
 	return int(float64(anomalyCount) * 100.0 / float64(totalReads))
+}
+
+///
+
+func getNow() int64 {
+	return time.Now().Unix()
+}
+
+type movingAverage struct {
+	ma        [5]int
+	last_time int64
+}
+
+func newMovingAverage() *movingAverage {
+	return &movingAverage{}
+}
+
+func (ma *movingAverage) increment() {
+	now := getNow()
+	second := int(now % 5)
+
+	diff := int(now - ma.last_time)
+	if diff > 5 {
+		diff = 5
+	}
+	for i := 0; i < diff; i++ {
+		// fmt.Println("overwriting", (second+i)%5)
+		ma.ma[(second+i)%5] = 0
+	}
+
+	ma.ma[second] += 1
+	// fmt.Println("current second is", second)
+	// fmt.Println("values are", ma)
+	// fmt.Println("value second is", ma.ma[second], "total is", ma.total())
+
+	ma.last_time = now
+}
+
+func (ma *movingAverage) total() int {
+	agg := 0
+	for _, val := range ma.ma {
+		agg += val
+	}
+	return agg
 }
