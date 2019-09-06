@@ -73,6 +73,8 @@ spec:
         - name: consul
           image: "{{ default .Values.global.image .Values.server.image }}"
           env:
+            - name: REFLECTIVE_ADAPTING
+              value: "moving_window"
             - name: POD_IP
               valueFrom:
                 fieldRef:
@@ -97,6 +99,7 @@ spec:
 
               exec /bin/consul agent \
                 -advertise="${POD_IP}" \
+                -reflective-adapting="${REFLECTIVE_ADAPTING}" \
                 -bind=0.0.0.0 \
                 -bootstrap-expect={{ .Values.server.bootstrapExpect }} \
                 -client=0.0.0.0 \

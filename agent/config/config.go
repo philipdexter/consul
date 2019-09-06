@@ -288,6 +288,8 @@ type Config struct {
 	SyncCoordinateRateTarget   *float64 `json:"sync_coordinate_rate_target,omitempty" hcl:"sync_coordinate_rate_target" mapstructure:"sync_coordinate_rate_target"`
 	Version                    *string  `json:"version,omitempty" hcl:"version" mapstructure:"version"`
 	VersionPrerelease          *string  `json:"version_prerelease,omitempty" hcl:"version_prerelease" mapstructure:"version_prerelease"`
+
+	ReflectiveAdapting *string `json:"reflective_adapting" hcl:"reflective_adapting" mapstructure:"reflective_adapting"`
 }
 
 type GossipLANConfig struct {

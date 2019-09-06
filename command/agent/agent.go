@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/consul/command/flags"
 	"github.com/hashicorp/consul/lib"
 	"github.com/hashicorp/consul/logger"
+	"github.com/hashicorp/consul/reflective"
 	"github.com/hashicorp/consul/service_os"
 	"github.com/hashicorp/go-checkpoint"
 	multierror "github.com/hashicorp/go-multierror"
@@ -184,6 +185,17 @@ func (c *cmd) run(args []string) int {
 	config := c.readConfig()
 	if config == nil {
 		return 1
+	}
+
+	// Set up reflective consistency
+	if c.flagArgs.Config.ReflectiveAdapting != nil {
+		err := reflective.InitConfig(*c.flagArgs.Config.ReflectiveAdapting)
+		if err != nil {
+			fmt.Println(err)
+			return 1
+		}
+	} else {
+		fmt.Println("WARNING: no reflective adapting set")
 	}
 
 	// Setup the log outputs

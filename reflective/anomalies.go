@@ -2,6 +2,7 @@ package reflective
 
 import (
 	"bytes"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -26,6 +27,25 @@ var keyAnomaliesLock = sync.Mutex{}
 // performed for each key
 var keyReads map[string]*movingAverage = map[string]*movingAverage{}
 var keyReadsLock = sync.Mutex{}
+
+const (
+	movingWindow = iota
+	decayingAverage
+)
+
+var reflectiveAdapting = movingWindow
+
+func InitConfig(refladapting string) error {
+	if refladapting == "moving_window" {
+		reflectiveAdapting = movingWindow
+	} else if refladapting == "decaying_average" {
+		reflectiveAdapting = decayingAverage
+	} else {
+		return fmt.Errorf("invalid reflective adapting")
+	}
+
+	return nil
+}
 
 // RecordRead records a read for key which returned value at time when
 func RecordRead(key string, value []byte, when int64) {

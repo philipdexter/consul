@@ -107,4 +107,5 @@ func AddFlags(fs *flag.FlagSet, f *Flags) {
 	add(&f.Config.UI, "ui", "Enables the built-in static web UI server.")
 	add(&f.Config.UIDir, "ui-dir", "Path to directory containing the web UI resources.")
 	add(&f.HCL, "hcl", "hcl config fragment. Can be specified multiple times.")
+	add(&f.Config.ReflectiveAdapting, "reflective-adapting", "Which strategy to use when adapting to anomalies")
 }
