@@ -1,0 +1,13 @@
+includes:
+  - url: https://github.com/philipdexter/std.mold
+
+recipes:
+  build:
+    type: sh
+    script: "make dev-docker"
+  tag-push:
+    type: sh
+    script: |
+      set -e
+      docker tag consul-dev:latest philipdexter/consul-dev:latest
+      docker push philipdexter/consul-dev:latest
