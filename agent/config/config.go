@@ -267,6 +267,8 @@ type Config struct {
 	VerifyOutgoing                   *bool                    `json:"verify_outgoing,omitempty" hcl:"verify_outgoing" mapstructure:"verify_outgoing"`
 	VerifyServerHostname             *bool                    `json:"verify_server_hostname,omitempty" hcl:"verify_server_hostname" mapstructure:"verify_server_hostname"`
 	Watches                          []map[string]interface{} `json:"watches,omitempty" hcl:"watches" mapstructure:"watches"`
+	MetricsRefreshRate               *int                     `json:"metrics_refresh,omitempty" mapstructure:"metrics_refresh"`
+	MetricsAggInterval               *int                     `json:"metrics_agg_interval,omitempty" mapstructure:"metrics_agg_interval"`
 
 	// This isn't used by Consul but we've documented a feature where users
 	// can deploy their snapshot agent configs alongside their Consul configs

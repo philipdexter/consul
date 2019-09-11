@@ -217,12 +217,28 @@ func (c *cmd) run(args []string) int {
 
 	// Setup gRPC logger to use the same output/filtering
 	grpclog.SetLoggerV2(logger.NewGRPCLogger(logConfig, c.logger))
+	if c.flagArgs.Config.MetricsRefreshRate != nil {
+		config.Telemetry.MetricsRefreshRate = *(c.flagArgs.Config.MetricsRefreshRate)
+	} else {
+		config.Telemetry.MetricsRefreshRate = 10
+	}
+
+	if c.flagArgs.Config.MetricsAggInterval != nil {
+		config.Telemetry.MetricsAggInterval = *(c.flagArgs.Config.MetricsAggInterval)
+	} else {
+		config.Telemetry.MetricsAggInterval = 60
+	}
+
+	c.logger.Println("MetricsRefreshRate ", config.Telemetry.MetricsRefreshRate)
+	c.logger.Println("MetricsAggInterval ", config.Telemetry.MetricsAggInterval)
 
 	memSink, err := lib.InitTelemetry(config.Telemetry)
 	if err != nil {
 		c.UI.Error(err.Error())
 		return 1
 	}
+
+	reflective.InitTelemetry(memSink, c.logger)
 
 	// Create the agent
 	c.UI.Output("Starting Consul agent...")

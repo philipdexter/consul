@@ -3,8 +3,11 @@ package reflective
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"sync"
 	"time"
+
+	metrics "github.com/armon/go-metrics"
 )
 
 // readRecord stores when and what was read
@@ -34,6 +37,29 @@ const (
 )
 
 var reflectiveAdapting = movingWindow
+
+var sink *metrics.InmemSink
+var logger *log.Logger
+
+func InitTelemetry(sink_in *metrics.InmemSink, log_in *log.Logger) {
+	sink = sink_in
+	logger = log_in
+	go walkMetrics()
+}
+
+//https://godoc.org/github.com/armon/go-metrics#IntervalMetrics
+//https://www.consul.io/docs/agent/telemetry.html
+func walkMetrics() {
+	counter := 0
+	for {
+		for i, v := range sink.Data() {
+			logger.Println(v.Interval)
+			logger.Println("index", i)
+		}
+		counter++
+		time.Sleep(5 * time.Second)
+	}
+}
 
 func InitConfig(refladapting string) error {
 	if refladapting == "moving_window" {

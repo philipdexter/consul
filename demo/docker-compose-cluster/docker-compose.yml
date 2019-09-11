@@ -6,7 +6,7 @@ services:
     image: consul-dev:latest
     networks:
       - consul-demo
-    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0 -metricsrefreshrate 5 -metricsagginterval 5" 
 
   consul-agent-2:
     <<: *consul-agent
@@ -16,7 +16,7 @@ services:
 
   consul-server-1: &consul-server
     <<: *consul-agent
-    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0 -reflective-adapting moving_window"
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0 -reflective-adapting moving_window -metricsrefreshrate 5 -metricsagginterval 5"
 
   consul-server-2:
     <<: *consul-server
@@ -28,7 +28,7 @@ services:
       - "8500:8500"
       - "8600:8600"
       - "8600:8600/udp"
-    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0 -reflective-adapting moving_window"
+    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0 -reflective-adapting moving_window -metricsrefreshrate 5 -metricsagginterval 5"
 
 networks:
   consul-demo:

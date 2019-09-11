@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -190,6 +191,9 @@ type TelemetryConfig struct {
 	//
 	// hcl: telemetry { statsite_address = string }
 	StatsiteAddr string `json:"statsite_address,omitempty" mapstructure:"statsite_address"`
+
+	MetricsRefreshRate int `json:"metrics_refresh,omitempty" mapstructure:"metrics_refresh"`
+	MetricsAggInterval int `json:"metrics_agg_interval,omitempty" mapstructure:"metrics_agg_interval"`
 }
 
 // MergeDefaults copies any non-zero field from defaults into the current
@@ -329,9 +333,15 @@ func InitTelemetry(cfg TelemetryConfig) (*metrics.InmemSink, error) {
 	// Setup telemetry
 	// Aggregate on 10 second intervals for 1 minute. Expose the
 	// metrics over stderr when there is a SIGUSR1 received.
-	memSink := metrics.NewInmemSink(10*time.Second, time.Minute)
-	metrics.DefaultInmemSignal(memSink)
+
 	metricsConf := metrics.DefaultConfig(cfg.MetricsPrefix)
+	aggregationInterval := time.Duration(cfg.MetricsAggInterval * int(time.Second))
+	refreshRate := time.Duration(cfg.MetricsRefreshRate * int(time.Second))
+	fmt.Sprint("aggregationInterval:%v refreshRate:%v", int64(aggregationInterval), int64(refreshRate))
+	fmt.Sprint("aggregationInterval:%d refreshRate:%d", int64(aggregationInterval), int64(refreshRate))
+	memSink := metrics.NewInmemSink(refreshRate, aggregationInterval)
+	metrics.DefaultInmemSignal(memSink)
+
 	metricsConf.EnableHostname = !cfg.DisableHostname
 	metricsConf.FilterDefault = cfg.FilterDefault
 	metricsConf.AllowedPrefixes = cfg.AllowedPrefixes
