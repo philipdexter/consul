@@ -4,6 +4,8 @@ services:
 
   consul-agent-1: &consul-agent
     image: consul-dev:latest
+    environment:
+      - 'CONSUL_LOCAL_CONFIG={"telemetry": {"statsd_address": "host.docker.internal:8125", "prometheus_retention_time":"12h" }}'
     networks:
       - consul-demo
     command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0 -metricsrefreshrate 5 -metricsagginterval 5" 
