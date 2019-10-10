@@ -88,7 +88,7 @@ func (c *FSM) applyKVSOperation(buf []byte, index uint64) interface{} {
 	switch req.Op {
 	case api.KVSet:
 		reflective.CheckWriteForAnomaly(req.DirEnt.Key, req.DirEnt.Value, req.Timestamp)
-		fmt.Println("APP SET", req.DirEnt.Key)
+		//fmt.Println("APP SET", req.DirEnt.Key)
 		return c.state.KVSSet(index, &req.DirEnt)
 	case api.KVDelete:
 		return c.state.KVSDelete(index, req.DirEnt.Key)

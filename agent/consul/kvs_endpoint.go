@@ -80,7 +80,7 @@ func kvsPreApply(srv *Server, rule acl.Authorizer, op api.KVOp, dirEnt *structs.
 // Apply is used to apply a KVS update request to the data store.
 func (k *KVS) Apply(args *structs.KVSRequest, reply *bool) error {
 
-	fmt.Println("PUT", args.DirEnt.Key)
+	//fmt.Println("PUT", args.DirEnt.Key)
 
 	if done, err := k.srv.forward("KVS.Apply", args, args, reply); done {
 		return err
@@ -124,7 +124,7 @@ func (k *KVS) Apply(args *structs.KVSRequest, reply *bool) error {
 // Get is used to lookup a single key.
 func (k *KVS) Get(args *structs.KeyRequest, reply *structs.IndexedDirEntries) error {
 
-	fmt.Println("GET", args.Key)
+	//fmt.Println("GET", args.Key)
 
 	isLeader := k.srv.IsLeader()
 	isStale := args.AllowStale

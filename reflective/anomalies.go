@@ -52,12 +52,25 @@ func InitTelemetry(sink_in *metrics.InmemSink, log_in *log.Logger) {
 func walkMetrics() {
 	counter := 0
 	for {
-		for i, v := range sink.Data() {
-			logger.Println(v.Interval)
-			logger.Println("index", i)
+		for _, v := range sink.Data() {
+			var getVal, ok1 = v.Samples["consul.http.GET.v1.kv._"]
+			if ok1 {
+				logger.Println("GET:", getVal)
+
+			}
+
+			var putVal, ok2 = v.Samples["consul.http.PUT.v1.kv._"]
+			if ok2 {
+				logger.Println("PUT:", putVal)
+				//logger.Println(v.Interval)
+				//logger.Println(v.Gauges)
+				//logger.Println(v.Counters)
+				//logger.Println(v.Points)
+			}
+
 		}
 		counter++
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
 
